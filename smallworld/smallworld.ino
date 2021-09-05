@@ -2,7 +2,7 @@
 #include "ServoEasing.h"
 #include "SoftwareSerial.h"
 #include <DFMiniMp3.h>
-#include "Wire.h"
+#include <Wire.h>
 #include "RTClib.h"
 
 #define SERVO1_PIN 9
@@ -54,7 +54,7 @@ public:
 };
 
 ServoEasing Servo1;
-SoftwareSerial mySoftwareSerial(10, 11); // RX, TX
+SoftwareSerial mySoftwareSerial(11, 10); // RX, TX
 DFMiniMp3<SoftwareSerial, Mp3Notify> mp3(mySoftwareSerial);
 long randNumber;
 const int SOUND_PIN = 4;
@@ -88,7 +88,7 @@ void setup() {
     uint16_t volume = mp3.getVolume();
     Serial.print("volume ");
     Serial.println(volume);
-    mp3.setVolume(30);
+    mp3.setVolume(15);
     uint16_t count = mp3.getTotalTrackCount(DfMp3_PlaySource_Sd);
     Serial.print("files ");
     Serial.println(count);
@@ -106,36 +106,44 @@ void setup() {
     // Wait for servo to reach start position.
     delay(500);
     //******************* RTC part
-   // #ifndef ESP8266
-  //    while (!Serial); // wait for serial port to connect. Needed for native USB
-  //  #endif
-  //  if (! rtc.begin()) {
-  //    Serial.println("Couldn't find RTC");
-   //   Serial.flush();
-   //   abort();
-  //  }
-  //  if (! rtc.initialized() || rtc.lostPower()) {
-  //    Serial.println("RTC is NOT initialized, let's set the time!");
-  //    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  //  }
-  //  rtc.start();
-   // float drift = 43; // seconds plus or minus over oservation period - set to 0 to cancel previous calibration.
-  //  float period_sec = (7 * 86400);  // total obsevation period in seconds (86400 = seconds in 1 day:  7 days = (7 * 86400) seconds )
-  //  float deviation_ppm = (drift / period_sec * 1000000); //  deviation in parts per million (μs)
-  //  float drift_unit = 4.34; // use with offset mode PCF8523_TwoHours
-   // int offset = round(deviation_ppm / drift_unit);
-  //  Serial.print("Offset is "); Serial.println(offset); // Print to control offset
-  Serial.println(F("\nI2C PINS"));
-  Serial.print(F("\tSDA = ")); Serial.println(SDA);
-  Serial.print(F("\tSCL = ")); Serial.println(SCL);
+    #ifndef ESP8266
+      while (!Serial); // wait for serial port to connect. Needed for native USB
+    #endif
+    if (! rtc.begin()) {
+      Serial.println("Couldn't find RTC");
+      Serial.flush();
+      abort();
+    }
+    if (! rtc.initialized() || rtc.lostPower()) {
+      Serial.println("RTC is NOT initialized, let's set the time!");
+      rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    }
+    rtc.start();
+    float drift = 43; // seconds plus or minus over oservation period - set to 0 to cancel previous calibration.
+    float period_sec = (7 * 86400);  // total obsevation period in seconds (86400 = seconds in 1 day:  7 days = (7 * 86400) seconds )
+    float deviation_ppm = (drift / period_sec * 1000000); //  deviation in parts per million (μs)
+    float drift_unit = 4.34; // use with offset mode PCF8523_TwoHours
+    int offset = round(deviation_ppm / drift_unit);
+    Serial.print("Offset is "); Serial.println(offset); // Print to control offset
 }
 
 void loop() 
 {
-   
-    
-    
-    
+    DateTime now = rtc.now();
+    Serial.print(now.year(), DEC);
+    Serial.print('/');
+    Serial.print(now.month(), DEC);
+    Serial.print('/');
+    Serial.print(now.day(), DEC);
+    Serial.print(" (");
+    Serial.print(daysOfTheWeek[now.dayOfTheWeek()]);
+    Serial.print(") ");
+    Serial.print(now.hour(), DEC);
+    Serial.print(':');
+    Serial.print(now.minute(), DEC);
+    Serial.print(':');
+    Serial.print(now.second(), DEC);
+    Serial.println();
     int soundswitch = digitalRead(SOUND_PIN);
     if (soundswitch == HIGH){
        mp3.playMp3FolderTrack(1);
@@ -168,5 +176,5 @@ void loop()
     Servo1.setEasingType(EASE_LINEAR);
     Servo1.write(90);
 
-    delay(2000);
+    delay(10000);
 }
