@@ -1,8 +1,12 @@
-#include <PololuMaestro.h>
-#include "Arduino.h"
+#include <Arduino.h>
+#include "ServoEasing.h"
 #include "SoftwareSerial.h"
 #include <DFMiniMp3.h>
+#include "Wire.h"
+#include "RTClib.h"
 
+#define SERVO1_PIN 9
+#define INFO // to see serial output of loop
 
 class Mp3Notify
 {
@@ -49,13 +53,16 @@ public:
   }
 };
 
-SoftwareSerial maestroSerial(10, 11);
-SoftwareSerial mySoftwareSerial(9, 8); // RX, TX
+ServoEasing Servo1;
+SoftwareSerial mySoftwareSerial(10, 11); // RX, TX
 DFMiniMp3<SoftwareSerial, Mp3Notify> mp3(mySoftwareSerial);
-void printDetail(uint8_t type, int value);
-MicroMaestro maestro(maestroSerial);
-const int MOTION_PIN = 2;
 long randNumber;
+const int SOUND_PIN = 4;
+RTC_PCF8523 rtc;
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+
+
+void printDetail(uint8_t type, int value);
 
 void waitMilliseconds(uint16_t msWait)
 {
@@ -70,83 +77,96 @@ void waitMilliseconds(uint16_t msWait)
   }
 }
 
-void setup()
-{
-  maestroSerial.begin(9600);
-  mySoftwareSerial.begin(9600);
-  randomSeed(analogRead(0));
-  Serial.begin(115200);
-  mp3.begin();
-  pinMode(MOTION_PIN, INPUT_PULLUP);
-  Serial.println();
-  Serial.println(F("Initializing DFPlayer ... (May take 3~5 seconds)"));
-  uint16_t volume = mp3.getVolume();
-  Serial.print("volume ");
-  Serial.println(volume);
-  mp3.setVolume(30);
-  
-  uint16_t count = mp3.getTotalTrackCount(DfMp3_PlaySource_Sd);
-  Serial.print("files ");
-  Serial.println(count);
-  
-  Serial.println("starting...");
-
+void setup() {
+    mySoftwareSerial.begin(9600);
+    randomSeed(analogRead(0));
+    Serial.begin(115200);
+    mp3.begin();
+    pinMode(SOUND_PIN, INPUT_PULLUP);
+    Serial.println();
+    Serial.println(F("Initializing DFPlayer ... (May take 3~5 seconds)"));
+    uint16_t volume = mp3.getVolume();
+    Serial.print("volume ");
+    Serial.println(volume);
+    mp3.setVolume(30);
+    uint16_t count = mp3.getTotalTrackCount(DfMp3_PlaySource_Sd);
+    Serial.print("files ");
+    Serial.println(count);
+    Serial.println("starting...");
+#if defined(__AVR_ATmega32U4__) || defined(SERIAL_USB) || defined(SERIAL_PORT_USBVIRTUAL)  || defined(ARDUINO_attiny3217)
+    delay(2000); // To be able to connect Serial monitor after reset or power up and before first printout
+#endif
+    Serial.println(F("START " __FILE__ " from " __DATE__ "\r\nUsing library version " VERSION_SERVO_EASING));
+    Serial.print(F("Attach servo at pin "));
+    Serial.println(SERVO1_PIN);
+    if (Servo1.attach(SERVO1_PIN) == INVALID_SERVO) {
+        Serial.println(F("Error attaching servo"));
+    }
+     Servo1.write(90);
+    // Wait for servo to reach start position.
+    delay(500);
+    //******************* RTC part
+   // #ifndef ESP8266
+  //    while (!Serial); // wait for serial port to connect. Needed for native USB
+  //  #endif
+  //  if (! rtc.begin()) {
+  //    Serial.println("Couldn't find RTC");
+   //   Serial.flush();
+   //   abort();
+  //  }
+  //  if (! rtc.initialized() || rtc.lostPower()) {
+  //    Serial.println("RTC is NOT initialized, let's set the time!");
+  //    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  //  }
+  //  rtc.start();
+   // float drift = 43; // seconds plus or minus over oservation period - set to 0 to cancel previous calibration.
+  //  float period_sec = (7 * 86400);  // total obsevation period in seconds (86400 = seconds in 1 day:  7 days = (7 * 86400) seconds )
+  //  float deviation_ppm = (drift / period_sec * 1000000); //  deviation in parts per million (μs)
+  //  float drift_unit = 4.34; // use with offset mode PCF8523_TwoHours
+   // int offset = round(deviation_ppm / drift_unit);
+  //  Serial.print("Offset is "); Serial.println(offset); // Print to control offset
+  Serial.println(F("\nI2C PINS"));
+  Serial.print(F("\tSDA = ")); Serial.println(SDA);
+  Serial.print(F("\tSCL = ")); Serial.println(SCL);
 }
 
-void loop()
+void loop() 
 {
-  int proximity = digitalRead(MOTION_PIN);
-
-  if (proximity == HIGH) // If the sensor's output goes low, motion is detected
-  {
-    randomSeed(analogRead(0));
-    randNumber = random(5);
-    Serial.println(randNumber);
-    if (randNumber == 0)
-    {
-      Serial.println(F("Sequence 1"));
-      maestro.restartScript(1);
-      mp3.playMp3FolderTrack(1);
-      Serial.println("track 1"); 
-      delay(1000);
+   
+    
+    
+    
+    int soundswitch = digitalRead(SOUND_PIN);
+    if (soundswitch == HIGH){
+       mp3.playMp3FolderTrack(1);
+       Serial.println("track 1"); 
     }
-    if (randNumber == 1)
-    {
-      Serial.println(F("Sequence 2"));
-      maestro.restartScript(2);
-      delay(100);
-      mp3.playMp3FolderTrack(2);
-      Serial.println("track 2"); 
-      delay(1000);
-    }                                                   
-    if (randNumber == 2)
-    {
-      Serial.println(F("Sequence 3"));
-      maestro.restartScript(3);
-      delay(100);
-      mp3.playMp3FolderTrack(3);
-      Serial.println("track 3"); 
-      delay(10000);
-    } 
-        if (randNumber == 3)
-    {
-      Serial.println(F("Sequence 4"));
-      maestro.restartScript(4);
-      delay(100);
-      mp3.playMp3FolderTrack(4);
-      Serial.println("track 3"); 
-      delay(10000);
-    } 
-    if (randNumber > 3)
-    {
-      Serial.println(F("Sequence 5"));
-      maestro.restartScript(5);
-      delay(100);
-      mp3.playMp3FolderTrack(3);
-      Serial.println("track 4"); 
-      delay(1000);
+#ifdef INFO
+    Serial.println(F("Move to 180 degree and back nonlinear in one second each using interrupts"));
+#endif
+    Servo1.setEasingType(EASE_CUBIC_IN_OUT);
+
+    for (int i = 0; i < 4; ++i) {
+#ifdef ENABLE_MICROS_AS_DEGREE_PARAMETER
+        Servo1.startEaseToD((544 + (((2400 - 544) / 4) * 3)), 1000);
+#else
+        Servo1.startEaseToD(180, 1000);
+#endif
+        // areInterruptsActive() calls yield for the ESP8266 boards
+        while (ServoEasing::areInterruptsActive()) {
+            ; // no delays here to avoid break between forth and back movement
+        }
+#ifdef ENABLE_MICROS_AS_DEGREE_PARAMETER
+        Servo1.startEaseToD((544 + ((2400 - 544) / 4)), 1000);
+#else
+        Servo1.startEaseToD(0, 1000);
+#endif
+        while (ServoEasing::areInterruptsActive()) {
+            ; // no delays here to avoid break between forth and back movement
+        }
     }
+    Servo1.setEasingType(EASE_LINEAR);
+    Servo1.write(90);
 
-  }
-
-}                                          
+    delay(2000);
+}
