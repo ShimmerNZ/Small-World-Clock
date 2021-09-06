@@ -118,6 +118,7 @@ void setup() {
       Serial.println("RTC is NOT initialized, let's set the time!");
       rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     }
+    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     rtc.start();
     float drift = 43; // seconds plus or minus over oservation period - set to 0 to cancel previous calibration.
     float period_sec = (7 * 86400);  // total obsevation period in seconds (86400 = seconds in 1 day:  7 days = (7 * 86400) seconds )
@@ -145,36 +146,34 @@ void loop()
     Serial.print(now.second(), DEC);
     Serial.println();
     int soundswitch = digitalRead(SOUND_PIN);
-    if (soundswitch == HIGH){
-       mp3.playMp3FolderTrack(1);
-       Serial.println("track 1"); 
+    if (now.hour() > 8 && now.hour() < 22 && now.minute() != 0 && now.second() == 0 && soundswitch == HIGH){
+       randomSeed(analogRead(0));
+       randNumber = random(5);
+       mp3.playMp3FolderTrack(randNumber);
+       Serial.print("track "); 
+       Serial.println(randNumber); 
+       #ifdef INFO
+       Serial.println(F("Move to 180 degree and back nonlinear in one second each using interrupts"));
+       #endif
+       Servo1.setEasingType(EASE_CUBIC_IN_OUT);
+       for (int i = 0; i < 8; ++i) {
+       #ifdef ENABLE_MICROS_AS_DEGREE_PARAMETER
+         Servo1.startEaseToD((544 + (((2400 - 544) / 4) * 3)), 1000);
+       #else
+         Servo1.startEaseToD(180, 1000); 
+       #endif
+       while (ServoEasing::areInterruptsActive()) {
+       }
+       #ifdef ENABLE_MICROS_AS_DEGREE_PARAMETER
+           Servo1.startEaseToD((544 + (((2400 - 544) / 4) * 3)), 1000);
+       #else
+           Servo1.startEaseToD(0, 1000);
+       #endif
+          while (ServoEasing::areInterruptsActive()) {
+       }
+       }
+       Servo1.setEasingType(EASE_LINEAR);
+       Servo1.write(90);
     }
-#ifdef INFO
-    Serial.println(F("Move to 180 degree and back nonlinear in one second each using interrupts"));
-#endif
-    Servo1.setEasingType(EASE_CUBIC_IN_OUT);
-
-    for (int i = 0; i < 4; ++i) {
-#ifdef ENABLE_MICROS_AS_DEGREE_PARAMETER
-        Servo1.startEaseToD((544 + (((2400 - 544) / 4) * 3)), 1000);
-#else
-        Servo1.startEaseToD(180, 1000);
-#endif
-        // areInterruptsActive() calls yield for the ESP8266 boards
-        while (ServoEasing::areInterruptsActive()) {
-            ; // no delays here to avoid break between forth and back movement
-        }
-#ifdef ENABLE_MICROS_AS_DEGREE_PARAMETER
-        Servo1.startEaseToD((544 + ((2400 - 544) / 4)), 1000);
-#else
-        Servo1.startEaseToD(0, 1000);
-#endif
-        while (ServoEasing::areInterruptsActive()) {
-            ; // no delays here to avoid break between forth and back movement
-        }
-    }
-    Servo1.setEasingType(EASE_LINEAR);
-    Servo1.write(90);
-
-    delay(10000);
+    delay(300);
 }
