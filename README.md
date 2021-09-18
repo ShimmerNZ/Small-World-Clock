@@ -4,6 +4,8 @@
  Being a big Disney fan I wanted to recreate a little bit of the park for a good friend whom also loves Disney. This ones not overly complex but it requires some soldering,
  jig saw to cut acrylic, a cricut for the front face and some 3d printing. If you're up for that then follow on...
  
+ [![It's a Small World Themed Clock](https://img.youtube.com/vi/ODasVDG-PvY/0.jpg)](https://www.youtube.com/watch?v=ODasVDG-PvY)
+
  ![Front](/images/front.jpg)
  ![Back view](/images/back.jpg)
  ![Back view 2](/images/back2.jpg)
