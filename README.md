@@ -52,7 +52,7 @@ Key pings are:
  
   ![Back view](/images/circuit.jpg)
   
- ## Assemblerduino
+ ## Arduino
  upload .ino file and edit to any pins you changed or frequency you want it to play.  
  
  ## Assemble
