@@ -6,6 +6,7 @@
  
  ![Front](/images/front.jpg)
  ![Back view](/images/back.jpg)
+ ![Back view 2](/images/back2.jpg)
 
  Parts List
  ===========
